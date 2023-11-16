@@ -9,7 +9,7 @@ function buildGoogleFontsUrl(fonts) {
         return [
             `family=${family.replace(/\s+/g, "+")}:`,
             italic ? "ital,wght@" : "wght@",
-            weights.map(weight => `${italic ? "1," : ""}${weight}`).join(";")
+            weights.map(weight => `0,${weight}${italic ? ";1," + weight : ""}`).join(";")
         ].join("");
     });
 
