@@ -1,15 +1,14 @@
 import { readFile, writeFile } from "fs/promises";
 
 import { extractGoogleFonts } from "./parser.js";
+import { filterValidGoogleFontsList } from "./api.js";
 
 function buildGoogleFontsUrl(fonts) {
     const families = fonts.map(font => {
         const { family, weights, italic } = font;
 
-        weights.sort((a, b) => a - b);
-
         const weightsString = weights.map(weight => `${italic ? "0," : ""}${weight}`).join(";"),
-            italicString = italic ? weights.map(weight => `${italic ? "1," : ""}${weight}`).join(";") : "";
+            italicString = italic.map(weight => `1,${weight}`).join(";");
 
         return [
             `family=${family.replace(/\s+/g, "+")}:`,
@@ -40,6 +39,8 @@ async function buildAndCleanupGoogleFonts(fonts, pluginOptions) {
     });
 
     if (!fonts.length) return false;
+
+    fonts = await filterValidGoogleFontsList(fonts);
 
     const url = buildGoogleFontsUrl(fonts),
         css = await fetch(url).then(res => res.text());

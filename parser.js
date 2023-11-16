@@ -90,11 +90,13 @@ export async function extractGoogleFonts(content) {
 
 	if (!weights.length) weights.push(400);
 
+	weights.sort();
+
 	return combineFonts(families.map(family => {
 		return {
 			family,
-			weights,
-			italic
+			weights: weights,
+			italic: italic ? weights : []
 		};
 	}));
 }
