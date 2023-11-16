@@ -9,6 +9,9 @@ function isValidFont(family) {
 	// Google only allows letters, numbers and spaces
 	if (family.match(/[^a-zA-Z0-9 ]/)) return false;
 
+	// Ifs its only numbers its probably not a font
+	if (family.match(/^[0-9]+$/)) return false;
+
 	return true;
 }
 

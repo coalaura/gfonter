@@ -6,10 +6,15 @@ function buildGoogleFontsUrl(fonts) {
     const families = fonts.map(font => {
         const { family, weights, italic } = font;
 
+        weights.sort((a, b) => a - b);
+
+        const weightsString = weights.map(weight => `${italic ? "0," : ""}${weight}`).join(";"),
+            italicString = italic ? weights.map(weight => `${italic ? "1," : ""}${weight}`).join(";") : "";
+
         return [
             `family=${family.replace(/\s+/g, "+")}:`,
             italic ? "ital,wght@" : "wght@",
-            weights.map(weight => `0,${weight}${italic ? ";1," + weight : ""}`).join(";")
+            [weightsString, italicString].filter(Boolean).join(";")
         ].join("");
     });
 
