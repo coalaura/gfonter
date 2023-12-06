@@ -1,9 +1,9 @@
 import { basename } from "path";
 
-import { generateGoogleFontsCss } from "./builder.js";
+import { updateGoogleFontsCssFile, generateGoogleFontsCss } from "./builder.js";
 
 async function transformCssFile(file, config, pluginOptions) {
-    const fonts = await generateGoogleFontsCss(file, pluginOptions);
+    const fonts = await updateGoogleFontsCssFile(file, pluginOptions);
 
     if (fonts && fonts > 0) {
         config.logger.info(`\x1b[96m[gfonter]\x1b[90m Found \x1b[32m${fonts}\x1b[90m Google Fonts in \x1b[35m${basename(file)}\x1b[0m`);
@@ -40,12 +40,27 @@ export function gFonterVitePlugin(pluginOptions = {}) {
             return;
         },
 
-        async handleHotUpdate(ctx) {
-            const file = ctx.file;
+        configureServer(server) {
+            server.middlewares.use(async (req, res, next) => {
+                if (req.url.includes(".scss") || req.url.includes(".css")) {
+                    const result = await server.transformRequest(req.url);
 
-            if (!file || !file.endsWith(".css")) return;
+                    if (result && result.code) {
+                        const { css } = await generateGoogleFontsCss(result.code, pluginOptions);
 
-            await transformCssFile(file, config, pluginOptions);
+                        if (!css) return next();
+
+                        const finalized = result.code.replace(/(?<=const __vite__css = ")/, css);
+
+                        res.setHeader("Content-Type", "text/css");
+                        res.end(finalized);
+
+                        return;
+                    }
+                }
+
+                next();
+            });
         }
     }
 }

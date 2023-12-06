@@ -3,6 +3,8 @@ import { readFile, writeFile } from "fs/promises";
 import { extractGoogleFonts } from "./parser.js";
 import { filterValidGoogleFontsList } from "./api.js";
 
+let cachedFonts = false;
+
 function buildGoogleFontsUrl(fonts) {
     const families = fonts.map(font => {
         const { family, weights, italic } = font;
@@ -42,27 +44,35 @@ async function buildAndCleanupGoogleFonts(fonts, pluginOptions) {
 
     fonts = await filterValidGoogleFontsList(fonts);
 
-    const url = buildGoogleFontsUrl(fonts),
-        css = await fetch(url).then(res => res.text());
+    const shouldRevalidateFonts = !cachedFonts || fonts.some(font => !cachedFonts.includes(font.family));
 
-    if (!css) {
-        throw new Error("Failed to fetch Google Fonts CSS");
+    let url = buildGoogleFontsUrl(fonts);
+
+    if (!url) return false;
+
+    if (shouldRevalidateFonts) {
+        const css = await fetch(url).then(res => res.text());
+
+        if (!css) {
+            throw new Error("Failed to fetch Google Fonts CSS");
+        }
+
+        fonts = fonts.filter(font => css.includes(`font-family: '${font.family}'`));
+
+        url = buildGoogleFontsUrl(fonts);
     }
-
-    fonts = fonts.filter(font => css.includes(`font-family: '${font.family}'`));
 
     if (!fonts.length) return false;
 
+    cachedFonts = fonts.map(font => font.family);
+
     return {
-        url: buildGoogleFontsUrl(fonts),
-        css: css.replace(/ {2,}|\r?\n|(?<=:) /g, ""),
+        url: url,
         fonts: fonts.length
     };
 }
 
-export async function generateGoogleFontsCss(path, pluginOptions) {
-    let content = await readFile(path, "utf-8");
-
+export async function generateGoogleFontsCss(content, pluginOptions) {
     const fonts = await extractGoogleFonts(content),
         build = await buildAndCleanupGoogleFonts(fonts, pluginOptions);
 
@@ -75,9 +85,25 @@ export async function generateGoogleFontsCss(path, pluginOptions) {
     content = content.replace(/@import(["'])https:\/\/fonts\.googleapis\.com.+?\1;?(\r?\n)?/g, "");
 
     // Add new import
-    content = (pluginOptions.inlineCss ? build.css : `@import"${build.url}";`) + content;
+    const css = `@import"${build.url}";`;
+
+    content = css + content;
+
+    return {
+        css: css,
+        content: content,
+        fonts: build.fonts
+    };
+}
+
+export async function updateGoogleFontsCssFile(path, pluginOptions) {
+    const oldContent = await readFile(path, "utf-8");
+
+    const {content, fonts} = await generateGoogleFontsCss(oldContent, pluginOptions);
+
+    if (!content) return false;
 
     await writeFile(path, content, "utf-8");
 
-    return build.fonts;
+    return fonts;
 }

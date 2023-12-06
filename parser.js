@@ -32,7 +32,7 @@ export async function extractGoogleFonts(content) {
 		switch (type) {
 			case "family":
 				const values = value.split(",")
-					.map(family => family.replace(/['"]/g, "").trim())
+					.map(family => family.replace(/[\\'"]/g, "").trim())
 					.filter(isValidFont);
 
 				families.push(...values);
