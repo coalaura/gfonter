@@ -60,9 +60,7 @@ async function buildAndCleanupGoogleFonts(fonts, pluginOptions) {
     };
 }
 
-export async function generateGoogleFontsCss(css, distDirectory, pluginOptions) {
-    const path = `${distDirectory}/${css}`.replace(/\\/g, "/");
-
+export async function generateGoogleFontsCss(path, pluginOptions) {
     let content = await readFile(path, "utf-8");
 
     const fonts = await extractGoogleFonts(content),
