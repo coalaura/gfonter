@@ -50,7 +50,7 @@ export function gFonterVitePlugin(pluginOptions = {}) {
 
                         if (!css) return next();
 
-                        const finalized = result.code.replace(/(?<=const __vite__css = ")/, css);
+                        const finalized = result.code.replace(/(?<=const __vite__css = ")/, css.replace(/"/g, "\\\""));
 
                         res.setHeader("Content-Type", "application/javascript");
                         res.end(finalized);

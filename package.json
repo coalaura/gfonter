@@ -1,6 +1,6 @@
 {
   "name": "@coalaura/gfonter",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Extract and combine google fonts imports.",
   "main": "index.js",
   "type": "module",
